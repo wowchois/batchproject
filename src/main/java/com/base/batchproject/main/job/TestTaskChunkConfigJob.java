@@ -1,5 +1,7 @@
 package com.base.batchproject.main.job;
 
+import com.base.batchproject.main.common.TestException;
+import com.base.batchproject.main.common.TestJobListener;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.Job;
@@ -31,9 +33,11 @@ public class TestTaskChunkConfigJob {
     private String JOBNAME = "testTaskChunkJob";
 
     @Bean
-    public Job testTaskChunkJob(){
+    public Job testTaskChunkJob() throws Exception{
         return jobBuilderFactory.get(JOBNAME)
                 .incrementer(new RunIdIncrementer())
+                .listener(new TestJobListener.jobExecutionListener())
+                .listener(new TestJobListener.jobExecutionAnotListener())
                 .start(this.taskStep1())
                 .next(this.chunkStep1())
                 .next(this.taskPagingStep1())
@@ -56,17 +60,29 @@ public class TestTaskChunkConfigJob {
         };
     }
     @Bean
-    public Step chunkStep1() { //chunksize로 처리
+    public Step chunkStep1() throws Exception{ //chunksize로 처리
         return stepBuilderFactory.get("chunkStep1")
                 .<String,String>chunk(10)
+                .listener(new TestJobListener.stepExecutionAnoListener())
                 .reader(itemReader())
                 .processor(itemProcessor())
                 .writer(itemWriter())
+                .faultTolerant() //skip같은 예외처리가 가능하게 해주는 설정
+                .skip(TestException.class)
+                .skipLimit(3)
+                .retry(NullPointerException.class)
+                .retryLimit(3)
                 .build();
     }
 
-    private ItemProcessor<String, String> itemProcessor() {
-        return item -> item + " now processor!!";
+    private ItemProcessor<String, String> itemProcessor() throws Exception{
+        return item -> {
+            log.info("### process " + item);
+            if(item == null){
+                throw new Exception("");
+            }
+            return item + " now processor!!";
+        };
     }
 
     private ItemWriter<String> itemWriter() {
@@ -94,7 +110,7 @@ public class TestTaskChunkConfigJob {
             int readCnt = stepExecution.getReadCount();
             int idx = readCnt + chunksize;
 
-            if(idx >= items.size()){
+            if(idx > items.size()){
                 return RepeatStatus.FINISHED;
             }
 
