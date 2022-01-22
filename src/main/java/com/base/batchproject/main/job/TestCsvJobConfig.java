@@ -1,7 +1,7 @@
 package com.base.batchproject.main.job;
 
 import com.base.batchproject.main.common.TestJobListener;
-import com.base.batchproject.main.vo.TestCsvFeildVo;
+import com.base.batchproject.main.vo.TestCsvFieldVo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.Job;
@@ -11,7 +11,6 @@ import org.springframework.batch.core.configuration.annotation.JobScope;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.item.ItemProcessor;
-import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.file.FlatFileItemReader;
 import org.springframework.batch.item.file.FlatFileItemWriter;
 import org.springframework.batch.item.file.builder.FlatFileItemReaderBuilder;
@@ -49,7 +48,7 @@ public class TestCsvJobConfig {
     public Step step1() throws Exception{
 
         return stepBuilderFactory.get(JOB_ID + "step1")
-                .<TestCsvFeildVo, TestCsvFeildVo>chunk(10)
+                .<TestCsvFieldVo, TestCsvFieldVo>chunk(10)
                 .reader(csvFileReader())
                 .processor(processor())
                 .writer(writer())
@@ -58,8 +57,8 @@ public class TestCsvJobConfig {
 
     @Bean
     @StepScope
-    public FlatFileItemReader<TestCsvFeildVo> csvFileReader() throws Exception {
-        DefaultLineMapper<TestCsvFeildVo> lineMapper = new DefaultLineMapper<>();
+    public FlatFileItemReader<TestCsvFieldVo> csvFileReader() throws Exception {
+        DefaultLineMapper<TestCsvFieldVo> lineMapper = new DefaultLineMapper<>();
         DelimitedLineTokenizer tokenizer = new DelimitedLineTokenizer();
 
         tokenizer.setNames("id","name","address");
@@ -69,10 +68,10 @@ public class TestCsvJobConfig {
             String name = fieldSet.readString("name");
             String address = fieldSet.readString("address");
 
-            return new TestCsvFeildVo(id,name,address);
+            return new TestCsvFieldVo(id,name,address);
         });
 
-        FlatFileItemReader reader = new FlatFileItemReaderBuilder<TestCsvFeildVo>()
+        FlatFileItemReader reader = new FlatFileItemReaderBuilder<TestCsvFieldVo>()
                 .name("csvItemReader")
                 .encoding("UTF-8")
                 .resource(new ClassPathResource("infotemp.csv")) //ClassPathResource : resources 파일 밑 디렉토리를 읽는 클래스
@@ -88,10 +87,10 @@ public class TestCsvJobConfig {
 
     @Bean
     @StepScope
-    public ItemProcessor<TestCsvFeildVo,TestCsvFeildVo> processor(){
-        return new ItemProcessor<TestCsvFeildVo, TestCsvFeildVo>() {
+    public ItemProcessor<TestCsvFieldVo, TestCsvFieldVo> processor(){
+        return new ItemProcessor<TestCsvFieldVo, TestCsvFieldVo>() {
             @Override
-            public TestCsvFeildVo process(TestCsvFeildVo item) throws Exception {
+            public TestCsvFieldVo process(TestCsvFieldVo item) throws Exception {
 
                 item.setAddress(item.getAddress() + "_process");
 
@@ -105,22 +104,25 @@ public class TestCsvJobConfig {
     }
 
     @Bean
-   // @StepScope
-    public ItemWriter<TestCsvFeildVo> writer() throws Exception{
+    @StepScope
+    public FlatFileItemWriter<TestCsvFieldVo> writer() throws Exception{
         //csv파일에 작성할 데이터를 추출하기 위해서 feildExtractor 객체가 필요
-        BeanWrapperFieldExtractor<TestCsvFeildVo> extractor = new BeanWrapperFieldExtractor();
+        BeanWrapperFieldExtractor<TestCsvFieldVo> extractor = new BeanWrapperFieldExtractor();
         extractor.setNames(new String[] {"id","name","address"}); //필드명 설정
 
         //line 구분값 설정
-        DelimitedLineAggregator<TestCsvFeildVo> lineAggreator = new DelimitedLineAggregator<>();
+        DelimitedLineAggregator<TestCsvFieldVo> lineAggreator = new DelimitedLineAggregator<>();
         lineAggreator.setDelimiter(",");
         lineAggreator.setFieldExtractor(extractor);
 
-        FlatFileItemWriter<TestCsvFeildVo> writer = new FlatFileItemWriterBuilder<TestCsvFeildVo>()
+        FlatFileItemWriter<TestCsvFieldVo> writer = new FlatFileItemWriterBuilder<TestCsvFieldVo>()
                 .name("csvItemWriter")
                 .encoding("UTF-8")
                 .resource(new FileSystemResource("output/test.csv")) //FileSystemResource : write할때 경로 지정
                 .lineAggregator(lineAggreator)
+                .headerCallback(writer1 -> writer1.write("id,name,address")) //header설정
+                .footerCallback(writer1 -> writer1.write("---------------\n")) //footer설정
+                .append(true)
                 .build();
 
         writer.afterPropertiesSet();
