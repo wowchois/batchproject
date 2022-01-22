@@ -10,14 +10,20 @@ import org.springframework.batch.core.configuration.annotation.JobBuilderFactory
 import org.springframework.batch.core.configuration.annotation.JobScope;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepScope;
+import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.file.FlatFileItemReader;
+import org.springframework.batch.item.file.FlatFileItemWriter;
 import org.springframework.batch.item.file.builder.FlatFileItemReaderBuilder;
+import org.springframework.batch.item.file.builder.FlatFileItemWriterBuilder;
 import org.springframework.batch.item.file.mapping.DefaultLineMapper;
+import org.springframework.batch.item.file.transform.BeanWrapperFieldExtractor;
+import org.springframework.batch.item.file.transform.DelimitedLineAggregator;
 import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.FileSystemResource;
 
 @RequiredArgsConstructor
 @Configuration
@@ -45,6 +51,7 @@ public class TestCsvJobConfig {
         return stepBuilderFactory.get(JOB_ID + "step1")
                 .<TestCsvFeildVo, TestCsvFeildVo>chunk(10)
                 .reader(csvFileReader())
+                .processor(processor())
                 .writer(writer())
                 .build();
     }
@@ -81,14 +88,44 @@ public class TestCsvJobConfig {
 
     @Bean
     @StepScope
-    public ItemWriter<TestCsvFeildVo> writer(){
-        return items -> {
-            items.forEach(vo -> {
-                log.info("### id : " + vo.getId());
-                log.info("### name : " + vo.getName());
-                log.info("### address : " + vo.getAddress());
-            });
+    public ItemProcessor<TestCsvFeildVo,TestCsvFeildVo> processor(){
+        return new ItemProcessor<TestCsvFeildVo, TestCsvFeildVo>() {
+            @Override
+            public TestCsvFeildVo process(TestCsvFeildVo item) throws Exception {
+
+                item.setAddress(item.getAddress() + "_process");
+
+                log.info("### id : " + item.getId());
+                log.info("### name : " + item.getName());
+                log.info("### address : " + item.getAddress());
+
+                return item;
+            }
         };
+    }
+
+    @Bean
+   // @StepScope
+    public ItemWriter<TestCsvFeildVo> writer() throws Exception{
+        //csv파일에 작성할 데이터를 추출하기 위해서 feildExtractor 객체가 필요
+        BeanWrapperFieldExtractor<TestCsvFeildVo> extractor = new BeanWrapperFieldExtractor();
+        extractor.setNames(new String[] {"id","name","address"}); //필드명 설정
+
+        //line 구분값 설정
+        DelimitedLineAggregator<TestCsvFeildVo> lineAggreator = new DelimitedLineAggregator<>();
+        lineAggreator.setDelimiter(",");
+        lineAggreator.setFieldExtractor(extractor);
+
+        FlatFileItemWriter<TestCsvFeildVo> writer = new FlatFileItemWriterBuilder<TestCsvFeildVo>()
+                .name("csvItemWriter")
+                .encoding("UTF-8")
+                .resource(new FileSystemResource("output/test.csv")) //FileSystemResource : write할때 경로 지정
+                .lineAggregator(lineAggreator)
+                .build();
+
+        writer.afterPropertiesSet();
+
+        return writer;
     }
 
 }
