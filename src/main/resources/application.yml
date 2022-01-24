@@ -2,3 +2,15 @@ spring:
   batch:
     job:
       names: ${job.name:NONE}
+  profiles:
+    active: local
+---
+spring:
+  config:
+    activate:
+      on-profile: mysql
+  datasource:
+    url: jdbc:mysql://localhost:3306/batchtest
+    username: root
+    password: 1234
+    driver-class-name: com.mysql.cj.jdbc.Driver
