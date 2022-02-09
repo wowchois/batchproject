@@ -9,5 +9,5 @@ import java.util.Collection;
 //user저장 repository
 public interface UserRepository extends JpaRepository<User,Long> {
 
-    Collection<Object> findAllByUpdateDate(LocalDate updateDate);
+    //Collection<Object> findAllByUpdateDate(LocalDate updateDate);
 }

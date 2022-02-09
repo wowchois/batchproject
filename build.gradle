@@ -26,6 +26,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:2.2.1'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.apache.poi:poi:3.15'
+    implementation 'org.apache.poi:poi-ooxml:3.15'
     compileOnly 'org.projectlombok:lombok'
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     runtimeOnly 'mysql:mysql-connector-java'
