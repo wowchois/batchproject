@@ -4,6 +4,13 @@ spring:
       names: ${job.name:NONE}
   profiles:
     active: local
+  devtools:
+    restart:
+      enabled: false
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
 ---
 spring:
   config:

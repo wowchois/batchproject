@@ -5,15 +5,14 @@ import com.base.batchproject.main.common.TestJobListener;
 import com.base.batchproject.main.entity.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.Row;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.JobScope;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
-import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
+import org.springframework.batch.item.ItemProcessor;
+import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.batch.item.database.JpaPagingItemReader;
 import org.springframework.batch.item.database.builder.JpaPagingItemReaderBuilder;
@@ -21,7 +20,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import javax.persistence.EntityManagerFactory;
-import java.lang.reflect.Field;
+import java.util.*;
 
 @RequiredArgsConstructor
 @Configuration
@@ -51,7 +50,7 @@ public class TestExcelJobConfig {
     @JobScope
     public Step excelStep1() throws Exception{
         return stepBuilderFactory.get(JOB_ID + "_step1")
-                .<User,User>chunk(chunkSize)
+                .<User, User>chunk(chunkSize)
                 .reader(excelReader1())
                 .writer(excelWriter1())
                 .listener(excelListener)
@@ -59,9 +58,7 @@ public class TestExcelJobConfig {
     }
 
     //엑셀 저장할 데이터 read
-    @Bean
-    @StepScope
-    public JpaPagingItemReader<User> excelReader1() throws Exception{
+    private ItemReader<? extends User> excelReader1() throws Exception{
         JpaPagingItemReader reader = new JpaPagingItemReaderBuilder<User>()
                 .pageSize(chunkSize)
                 .entityManagerFactory(entityManagerFactory)
@@ -74,11 +71,26 @@ public class TestExcelJobConfig {
     }
 
     //create excel file
+    private ItemWriter<User> excelWriter1() {
+        return items -> {;
+            log.info("### writer ### {}", items.get(0));
+
+            Iterator e = items.iterator();
+            while(e.hasNext()){
+                log.info("## {}",e.next());
+            }
+        };
+    }
+/*
+    //create excel file
     @Bean
     @StepScope
     public ItemWriter<User> excelWriter1() {
         return items -> {
             log.info("### writer ### {}",items);
+            for (User item : items) {
+                log.info("##"+item.getId()+"/"+item.getUsername());
+            }
             /*
             for(User item : items){
                 Row row = excelListener.sheet.createRow(rowIdx++);
@@ -90,7 +102,8 @@ public class TestExcelJobConfig {
                     cell.setCellValue(item.getUsername());
                 }
             }
-            */
+
         };
     }
+    */
 }
