@@ -5,6 +5,8 @@ import com.base.batchproject.main.common.TestJobListener;
 import com.base.batchproject.main.entity.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
@@ -77,33 +79,15 @@ public class TestExcelJobConfig {
 
             Iterator e = items.iterator();
             while(e.hasNext()){
-                log.info("## {}",e.next());
-            }
-        };
-    }
-/*
-    //create excel file
-    @Bean
-    @StepScope
-    public ItemWriter<User> excelWriter1() {
-        return items -> {
-            log.info("### writer ### {}",items);
-            for (User item : items) {
-                log.info("##"+item.getId()+"/"+item.getUsername());
-            }
-            /*
-            for(User item : items){
                 Row row = excelListener.sheet.createRow(rowIdx++);
+                Object[] t = (Object[]) e.next();
 
-                int idx = 0;
-                for(Field f : item.getClass().getDeclaredFields()){
-                    Cell cell = row.createCell(idx++);
-                    cell.setCellValue(item.getId());
-                    cell.setCellValue(item.getUsername());
+                for(int i=0;i<Arrays.stream(t).count(); i++){
+                    Cell cell = row.createCell(i);
+                    cell.setCellValue(t[i].toString());
                 }
             }
-
         };
     }
-    */
+
 }
