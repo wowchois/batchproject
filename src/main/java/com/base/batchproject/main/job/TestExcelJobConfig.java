@@ -74,16 +74,20 @@ public class TestExcelJobConfig {
 
     //create excel file
     private ItemWriter<User> excelWriter1() {
-        return items -> {;
+        return items -> {
             log.info("### writer ### {}", items.get(0));
 
+            //List<String[]> te = (List<String[]>) items.stream().map(s -> new String[] {}).collect(Collectors.toList());
+
+            Row row = null;
+            Cell cell = null;
             Iterator e = items.iterator();
             while(e.hasNext()){
-                Row row = excelListener.sheet.createRow(rowIdx++);
+                row = excelListener.sheet.createRow(rowIdx++);
                 Object[] t = (Object[]) e.next();
 
                 for(int i=0;i<Arrays.stream(t).count(); i++){
-                    Cell cell = row.createCell(i);
+                    cell = row.createCell(i);
                     cell.setCellValue(t[i].toString());
                 }
             }
