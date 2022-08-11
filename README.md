@@ -16,7 +16,7 @@ Spring Batch에서 구현 가능한 기능을 테스트하는 프로젝트.
 
 ### [Ljava.lang.Object; cannot be cast to   
 Entity vo 접근 에러, iterator로 접근해서 Object[] 형변환.  
- 정리 : https://choisblog.tistory.com/90
+ 정리 : [블로그](https://choisblog.tistory.com/90)
 
 ### lock wait timeout exceeded; try restarting transaction. 
 원인 :   
